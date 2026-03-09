@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, Request, Response
 from src.core.security.jwt_handler import get_current_user
 from src.api.rest.dependencies import get_db
 from src.schemas.user_schema import LoginRequest, UserRequest, UserResponse
-from src.core.services.user_service import createUser, login, logout
+from src.core.services.user_service import createUser, getProfile, login, logout
 from sqlalchemy.ext.asyncio import AsyncSession
 
 user_router = APIRouter(prefix="/users")
@@ -20,5 +20,5 @@ async def user_logout(request: Request, db: AsyncSession = Depends(get_db)):
     return await logout(request, db)
 
 @user_router.get("/me")
-async def get_me(current_user = Depends(get_current_user)):
-    return current_user
+async def get_me(current_user = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    return await getProfile(current_user["id"], db)

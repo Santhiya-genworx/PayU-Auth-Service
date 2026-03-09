@@ -53,19 +53,29 @@ def verify_refresh_token(token: str):
     except JWTError:
         return None
     
-async def get_current_user(payload: dict = Depends(JWTBearer()), db: AsyncSession = Depends(get_db)):     
+
+async def get_current_user(
+    request: Request,
+    db: AsyncSession = Depends(get_db)
+):
+    payload = getattr(request.state, "user", None)
+
+    if not payload:
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
     user_id = payload.get("user_id")
     email = payload.get("sub")
 
     if not user_id or not email:
-        raise HTTPException(status_code = 401, detail = "Invalid token payload")
-    
+        raise HTTPException(status_code=401, detail="Invalid token payload")
+
     user = await get_data_by_id(User, user_id, db)
+
     if not user:
-        raise HTTPException(status_code = 404, detail = "User not found")
-    
+        raise HTTPException(status_code=404, detail="User not found")
+
     return {
-        "id" : user.id,
+        "id": user.id,
         "name": user.name,
         "email": user.email,
         "role": user.role

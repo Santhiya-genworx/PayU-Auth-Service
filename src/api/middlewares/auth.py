@@ -19,11 +19,9 @@ class AuthMiddleware(BaseHTTPMiddleware):
         
         auth_header = request.headers.get("Authorization")
         if not auth_header:
+            token = request.cookies.get("access_token")
+        else:
             return JSONResponse(status_code=401, content={"detail": "Authorization Header Missing"})
-        
-        scheme, _, token = auth_header.partition(" ") 
-        if scheme != "Bearer": 
-            return JSONResponse(status_code=401, content={"detail": "Invalid authentication scheme"})
 
         try:
             payload = jwt.decode(token, settings.access_secret_key, algorithms = [settings.algorithm])

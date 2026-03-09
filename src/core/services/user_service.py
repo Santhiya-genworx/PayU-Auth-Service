@@ -1,4 +1,4 @@
-from fastapi import HTTPException, Request
+from fastapi import HTTPException, Request, Response
 from fastapi.responses import JSONResponse
 from src.core.security.hashing import hash_data, verify_data
 from src.core.security.jwt_handler import create_access_token, create_refresh_token, verify_refresh_token
@@ -36,7 +36,6 @@ async def login(request: LoginRequest, db: AsyncSession):
         data = {"sub": user.email, "user_id": user.id}
         access_token, _, _ = create_access_token(data)
         refresh_token, refresh_jti, refresh_expire = create_refresh_token(data)
-
         data = {
             "user_id": user.id,
             "jti": refresh_jti,
@@ -54,8 +53,9 @@ async def login(request: LoginRequest, db: AsyncSession):
         }
 
         response = JSONResponse({"message":"Login successful", "access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer", "user": {**data}})
-        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="lax", secure=False, max_age=settings.access_token_expire_minutes*60)
-        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="lax", secure=False, max_age=settings.refresh_token_expire_days*24*60*60)
+        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="lax", secure=False, path="/", max_age=settings.access_token_expire_minutes*60)
+        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="lax", secure=False, path="/", max_age=settings.refresh_token_expire_days*24*60*60)
+        
         return response
         
     except SQLAlchemyError as err:
@@ -80,5 +80,20 @@ async def logout(request: Request, db: AsyncSession):
         response.delete_cookie("refresh_token")
 
         return response
+    
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err))
+    
+async def getProfile(user_id: int, db: AsyncSession):
+    try:
+        result = await get_data_by_id(User, user_id, db)
+        return {
+            "id": result.id,
+            "name": result.name,
+            "email": result.email,
+            "role": result.role,
+            "is_active": result.is_active
+        }
+    
+    except SQLAlchemyError as err:
+        raise HTTPException(status_code=400, detail=str(err))
