@@ -2,6 +2,7 @@ from fastapi import FastAPI
 from src.api.middlewares.auth import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
 from src.api.rest.app import app_router
+import src.data.models
 
 app = FastAPI(title="PayU - Authentication Service",version="1.0")
 
