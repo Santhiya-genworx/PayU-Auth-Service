@@ -20,14 +20,13 @@ async def createUser(user: UserRequest, db: AsyncSession):
         }
         await insert_data(User, db, **data)
         return {"message": "User created successfully"}
+    
     except SQLAlchemyError as err:
         raise HTTPException(status_code=500, detail=str(err))
 
 async def login(request: LoginRequest, db: AsyncSession):
     try:
-        data = {
-            "email": request.email
-        }
+        data = { "email": request.email }
         user = await get_data_by_any(User, db, **data)
 
         if not user or not verify_data(request.password,user.password):
