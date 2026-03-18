@@ -62,7 +62,8 @@ async def refresh_access_token(request: Request, db: AsyncSession):
         access_token, _, _ = create_access_token(data)
 
         response = JSONResponse({"access_token": access_token, "token_type": "bearer"})
-        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="lax", secure=False, max_age=settings.access_token_expire_minutes*60)
+        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="none", secure=True, max_age=settings.access_token_expire_minutes*60)
+        
         return response
     except Exception as err:
         raise HTTPException(status_code=500, detail=str(err))

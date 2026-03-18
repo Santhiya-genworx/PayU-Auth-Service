@@ -26,6 +26,7 @@ async def createUser(user: UserRequest, db: AsyncSession):
 
 async def login(request: LoginRequest, db: AsyncSession):
     try:
+        print("login")
         data = { "email": request.email }
         user = await get_data_by_any(User, db, **data)
 
@@ -52,8 +53,8 @@ async def login(request: LoginRequest, db: AsyncSession):
         }
 
         response = JSONResponse({"message":"Login successful", "access_token": access_token, "refresh_token": refresh_token, "token_type":"bearer", "user": {**data}})
-        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="lax", secure=False, path="/", max_age=settings.access_token_expire_minutes*60)
-        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="lax", secure=False, path="/", max_age=settings.refresh_token_expire_days*24*60*60)
+        response.set_cookie(key="access_token", value=access_token, httponly=True, samesite="none", secure=True, path="/", max_age=settings.access_token_expire_minutes*60)
+        response.set_cookie(key="refresh_token", value=refresh_token, httponly=True, samesite="none", secure=True, path="/", max_age=settings.refresh_token_expire_days*24*60*60)
         
         return response
         
