@@ -12,5 +12,6 @@ app_router.include_router(refresh_router)
 
 @app_router.on_event("startup")
 async def on_start():
+    print("App started...")
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)

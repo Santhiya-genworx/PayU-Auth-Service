@@ -11,23 +11,32 @@ class AuthMiddleware(BaseHTTPMiddleware):
             "/",
             "/docs",
             "/openapi.json",
+            "/health",
             "/users/login",
             "/users/create"
         ]
+        print("auth",request.url)
+
         if request.url.path in public_urls:
             return await call_next(request)
-        
+
         auth_header = request.headers.get("Authorization")
-        if not auth_header:
+        token = None
+
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header.split(" ")[1]
+
+        elif request.cookies.get("access_token"):
             token = request.cookies.get("access_token")
-        else:
-            return JSONResponse(status_code=401, content={"detail": "Authorization Header Missing"})
+
+        if not token:
+            return JSONResponse(status_code=401, content={"detail": "Token missing"})
 
         try:
-            payload = jwt.decode(token, settings.access_secret_key, algorithms = [settings.algorithm])
+            payload = jwt.decode(token, settings.access_secret_key, algorithms=[settings.algorithm])
             request.state.user = payload
-        except JWTError as err:
+
+        except JWTError:
             return JSONResponse(status_code=401, content={"detail": "Invalid or expired token"})
-        
-        response = await call_next(request)
-        return response
+
+        return await call_next(request)

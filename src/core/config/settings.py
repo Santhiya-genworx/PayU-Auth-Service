@@ -6,6 +6,7 @@ class Settings(BaseSettings):
     db_host:str
     db_password:str
     db_port: int
+    db_url: str
 
     access_secret_key: str
     access_token_expire_minutes: int
