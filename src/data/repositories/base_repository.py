@@ -70,6 +70,7 @@ async def get_data_by_any(model: Type, db: AsyncSession, **kwargs):
         stmt = select(model).where(and_(*conditions))
         result = await db.execute(stmt)
         result = result.scalar_one_or_none()
+        print(result)
         if not result:
             raise HTTPException(status_code=404, detail="Data not found")
         return result
