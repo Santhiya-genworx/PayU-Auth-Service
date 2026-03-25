@@ -1,22 +1,27 @@
 from fastapi import FastAPI
-from src.api.middlewares.auth import AuthMiddleware
 from fastapi.middleware.cors import CORSMiddleware
+
+from src.api.middlewares.auth import AuthMiddleware
 from src.api.rest.app import app_router
-import src.data.models
 
-app = FastAPI(title="PayU - Authentication Service",version="1.0")
+app = FastAPI(title="PayU - Authentication Service", version="1.0")
 
-app.add_middleware(AuthMiddleware)
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://payu-frontend-717740758627.us-east1.run.app"],
+    allow_origins=[
+        "https://payu-frontend-717740758627.us-east1.run.app",
+        "http://localhost:5174",
+    ],
     allow_credentials=True,
     allow_methods=["*"],
-    allow_headers=["*"], 
+    allow_headers=["*"],
 )
+
+app.add_middleware(AuthMiddleware)
 
 app.include_router(app_router)
 
+
 @app.get("/")
-def welcome():
-    return {"message" : "Welcome to my website!"}
+def welcome() -> dict[str, str]:
+    return {"message": "Welcome to my website!"}
