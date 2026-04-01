@@ -17,6 +17,8 @@ class Settings(BaseSettings):
     refresh_token_expire_days: int
     algorithm: str
 
+    origins: str
+
     model_config = SettingsConfigDict(env_file=".env")
 
 
