@@ -1,5 +1,5 @@
-from __future__ import annotations
- 
+"""This module provides functionality for managing database schema migrations in the PayU Authentication Service. It includes functions to discover migration files, apply pending migrations to the database, and ensure that the migration history is accurately tracked. The module uses SQLAlchemy's asynchronous connection to execute SQL statements defined in migration files, and it maintains a `schema_migrations` table to keep track of applied migrations, their version numbers, names, and checksums. The migration files are expected to follow a specific naming convention and contain valid SQL statements. The module also includes error handling to ensure that any issues during the migration process are properly reported and do not lead to inconsistent database states.       """
+
 import hashlib
 import logging
 import re
@@ -17,6 +17,7 @@ _DEFAULT_MIGRATIONS_DIR = Path(__file__).resolve().parent / "versions"
  
 @dataclass(frozen=True, slots=True)
 class MigrationFile:
+    """Data class representing a database migration file. It contains the identifier, version number, name, checksum, SQL content, and file path of the migration. The identifier is derived from the filename and is used to track applied migrations in the database. The version number and name are extracted from the filename for organizational purposes. The checksum is calculated from the SQL content to ensure that applied migrations have not been altered. This class serves as a structured representation of migration files for use in the migration process. """
     identifier: str
     version_number: str
     name: str
@@ -26,6 +27,7 @@ class MigrationFile:
  
  
 def discover_migrations(migrations_dir: Path | None = None) -> list[MigrationFile]:
+    """Discover and validate migration files in the specified directory. This function scans the given directory (or the default migrations directory if none is provided) for SQL files that match the expected naming convention. It validates each file's name, ensures that it contains valid SQL content, and calculates a checksum for the file's content. The function returns a list of MigrationFile instances representing the discovered migrations. If any issues are found during this process, such as invalid filenames, duplicate identifiers, or empty files, appropriate exceptions are raised with detailed error messages.    Args:      migrations_dir: An optional Path object specifying the directory to search for migration files. If None, the default migrations directory is used.    Returns: A list of MigrationFile instances representing the discovered migrations.    Raises:      FileNotFoundError: If the migration directory does not exist.      NotADirectoryError: If the migration path is not a directory.      ValueError: If any migration file has an invalid name or is empty.          """
     directory = migrations_dir or _DEFAULT_MIGRATIONS_DIR
     if not directory.exists():
         raise FileNotFoundError(f"Migration directory does not exist: {directory}")
@@ -70,6 +72,7 @@ async def apply_migrations(
     conn: AsyncConnection,
     migrations_dir: Path | None = None,
 ) -> None:
+    """Apply pending database migrations to the connected database. This function retrieves the list of migration files from the specified directory, checks which migrations have already been applied to the database by querying the `schema_migrations` table, and applies any pending migrations in order. For each migration, it executes the SQL statements defined in the migration file and records the migration as applied in the database with its version number, name, and checksum. If any issues arise during this process, such as SQL execution errors or checksum mismatches for already applied migrations, appropriate exceptions are raised with detailed error messages to prevent inconsistent database states.    Args:    conn: An instance of AsyncConnection representing the connection to the database.    migrations_dir: An optional Path object specifying the directory to search for migration files. If None, the default migrations directory is used.    Raises:      RuntimeError: If a checksum mismatch is detected for an already applied migration, indicating that the migration file has been altered since it was applied.      ValueError: If any migration file contains no executable SQL statements.      AppException: If any error occurs during the execution of SQL statements or database operations while applying migrations.                      """
     migrations = discover_migrations(migrations_dir)
     await _ensure_schema_migrations_table(conn)
  
@@ -122,6 +125,7 @@ async def apply_migrations(
  
  
 async def _ensure_schema_migrations_table(conn: AsyncConnection) -> None:
+    """Ensure that the schema_migrations table exists in the database. This function executes SQL statements to create the `schema_migrations` table if it does not already exist, and to add any missing columns that are required for tracking migration history. The table is designed to store the migration version, version number, name, checksum, and the timestamp of when the migration was applied. If any issues arise during this process, such as SQL execution errors or database connection issues, appropriate exceptions are raised with detailed error messages.    Args:    conn: An instance of AsyncConnection representing the connection to the database.    Raises:      AppException: If any error occurs while ensuring the existence of the schema_migrations table, such as SQL execution errors or database connection issues.                            """
     await conn.exec_driver_sql(
         """
         CREATE TABLE IF NOT EXISTS schema_migrations (
@@ -149,6 +153,7 @@ async def _validate_or_backfill_migration_record(
     migration: MigrationFile,
     existing: dict[str, str | None],
 ) -> None:
+    """Validate the existing migration record against the current migration file, or backfill missing information if necessary. This function checks if the checksum of the already applied migration matches the checksum of the current migration file to ensure that the migration has not been altered since it was applied. If a mismatch is detected, a RuntimeError is raised to prevent potential issues from applying altered migrations. If the version number or name is missing from the existing record, it updates the database with the correct information from the current migration file.    Args:    conn: An instance of AsyncConnection representing the connection to the database.    migration: The MigrationFile instance representing the current migration being validated.    existing: A dictionary containing the existing migration record from the database, with keys for version_number, name, and checksum.    Raises:      RuntimeError: If a checksum mismatch is detected for an already applied migration, indicating that the migration file has been altered since it was applied.      AppException: If any error occurs while validating or backfilling the migration record in the database, such as SQL execution errors or database connection issues.                            """ 
     checksum = existing.get("checksum")
     if checksum:
         if checksum != migration.checksum:
@@ -179,6 +184,7 @@ async def _validate_or_backfill_migration_record(
  
  
 def _split_sql_statements(sql: str) -> list[str]:
+    """Split a SQL string into individual statements while respecting string literals, comments, and dollar-quoted strings. This function takes a SQL string and parses it to identify individual SQL statements, ensuring that semicolons within string literals, comments, or dollar-quoted strings are not treated as statement separators. The function handles single quotes, double quotes, line comments (starting with --), block comments (enclosed in /* */), and PostgreSQL-style dollar-quoted strings. It returns a list of SQL statements that can be executed separately. If any issues arise during this process, such as unclosed string literals or comments, appropriate exceptions may be raised with detailed error messages.    Args:    sql: A string containing the SQL code to be split into individual statements.    Returns:    A list of strings, each representing an individual SQL statement extracted from the input SQL code.    Raises:      ValueError: If the input SQL string contains unclosed string literals, comments,"""
     statements: list[str] = []
     current: list[str] = []
     i = 0
