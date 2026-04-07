@@ -1,3 +1,5 @@
+"""This module defines custom exception classes for the PayU Authentication Service. These exceptions are designed to provide clear and specific error messages for various error scenarios that may occur during the operation of the authentication service. By creating custom exceptions that inherit from FastAPI's HTTPException, we can easily raise appropriate HTTP status codes and error details in response to different types of errors, such as resource not found, unauthorized access, conflicts, and bad requests. This structured approach to error handling helps improve the maintainability and readability of the code while providing meaningful feedback to clients consuming the API."""
+
 from fastapi import HTTPException, status
 
 
